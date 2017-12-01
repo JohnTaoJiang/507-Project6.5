@@ -1,6 +1,8 @@
 # Import statements necessary
 from flask import Flask, render_template
 from flask_script import Manager
+import requests
+import json
 
 # Set up application
 app = Flask(__name__)
@@ -30,14 +32,24 @@ def basic_values_list(name):
 
 
 ## PART 1: Add another route /word/<new_word> as the instructions describe.
-
+@app.route('/word/<new_word>')
+def rhyme(new_word):
+    baseurl = 'https://api.datamuse.com/words'
+    params = {}
+    params['sl'] = new_word
+    response_text = requests.get(baseurl, params = params).text
+    # print(response_text)
+    response = json.loads(response_text)
+    # print(response)
+    res = response[1]['word']
+    return res
 
 ## PART 2: Edit the following route so that the photo_tags.html template will render
 @app.route('/flickrphotos/<tag>/<num>')
 def photo_titles(tag, num):
     # HINT: Trying out the flickr accessing code in another file and seeing what data you get will help debug what you need to add and send to the template!
     # HINT 2: This is almost all the same kind of nested data investigation you've done before!
-    FLICKR_KEY = "" # TODO: fill in a flickr key
+    FLICKR_KEY = "d3ab38d963dc79a739cbe6da7b666a59" # TODO: fill in a flickr key
     baseurl = 'https://api.flickr.com/services/rest/'
     params = {}
     params['api_key'] = FLICKR_KEY
@@ -47,11 +59,15 @@ def photo_titles(tag, num):
     params['per_page'] = num
     params['tags'] = tag
     response_obj = requests.get(baseurl, params=params)
+    # print(response_obj.text)
     trimmed_text = response_obj.text[14:-1]
     flickr_data = json.loads(trimmed_text)
-    # TODO: Add some code here that processes flickr_data in some way to get what you nested
-    # TODO: Edit the invocation to render_template to send the data you need
-    return render_template('photo_tags.html')
+    # # TODO: Add some code here that processes flickr_data in some way to get what you nested
+    # # TODO: Edit the invocation to render_template to send the data you need
+    photos_ls = flickr_data['photos']['photo']
+    num = len(photos_ls)
+    photo_titles = [photo['title'] for photo in photos_ls]
+    return render_template('photo_info.html', num = num, photo_titles = photo_titles)
 
 
 
